@@ -6,6 +6,7 @@ from pygame.sprite import Group
 
 from alien import Alien
 from bullet import Bullet
+from button import Button
 from settings import Settings
 from ship import Ship
 from game_stats import GameStats
@@ -15,13 +16,14 @@ from time import sleep
 class GameFunctions:
 
     def __init__(self, ai_settings: Settings, stats: GameStats, screen: SurfaceType,
-                 ship: Ship, aliens: Group, bullets: Group):
+                 ship: Ship, aliens: Group, bullets: Group, button: Button):
         self._ai_settings = ai_settings
         self._stats = stats
         self._screen = screen
         self._ship = ship
         self._aliens = aliens
         self._bullets = bullets
+        self._play_button = button
 
     """Private internal methods"""
 
@@ -46,6 +48,21 @@ class GameFunctions:
             self._ship.moving_right = False
         elif event.key == pygame.K_LEFT:
             self._ship.moving_left = False
+
+    def _check_play_button(self, mouse_x: int, mouse_y: int):
+
+        button_clicked = self._play_button.rect.collidepoint(mouse_x, mouse_y)
+        if button_clicked and not self._stats.game_active:
+            pygame.mouse.set_visible(False)
+
+            self._stats.reset_stats()
+            self._stats.game_active = True
+
+            self._aliens.empty()
+            self._bullets.empty()
+
+            self.create_fleet()
+            self._ship.center_ship()
 
     def _get_number_aliens(self, alien_width: int):
         available_space_x = self._ai_settings.screen_width - (2 * alien_width)
@@ -97,6 +114,7 @@ class GameFunctions:
 
         else:
             self._stats.game_active = False
+            pygame.mouse.set_visible(True)
 
     def _check_aliens_bottom(self):
         screen_rect = self._screen.get_rect()
@@ -121,6 +139,10 @@ class GameFunctions:
 
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                self._check_play_button(mouse_x, mouse_y)
 
     def update_bullets(self):
         self._bullets.update()
@@ -157,4 +179,8 @@ class GameFunctions:
             bullet.draw_bullet()
         self._ship.blitme()
         self._aliens.draw(self._screen)
+
+        if not self._stats.game_active:
+            self._play_button.draw_button()
+
         pygame.display.flip()
