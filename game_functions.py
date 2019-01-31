@@ -53,6 +53,8 @@ class GameFunctions:
 
         button_clicked = self._play_button.rect.collidepoint(mouse_x, mouse_y)
         if button_clicked and not self._stats.game_active:
+            self._ai_settings.init_dynamic_settings()
+
             pygame.mouse.set_visible(False)
 
             self._stats.reset_stats()
@@ -88,6 +90,7 @@ class GameFunctions:
 
         if len(self._aliens) == 0:
             self._bullets.empty()
+            self._ai_settings.increase_speed()
             self.create_fleet()
 
     def _change_fleet_direction(self):
