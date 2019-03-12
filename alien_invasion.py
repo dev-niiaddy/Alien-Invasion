@@ -6,6 +6,7 @@ from settings import Settings
 from ship import Ship
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 
 def run_game():
@@ -21,10 +22,11 @@ def run_game():
     aliens = Group()
 
     stats = GameStats(ai_settings)
+    sb = Scoreboard(ai_settings, screen, stats)
 
     play_button = Button(ai_settings, screen, "Play")
 
-    game_fun = GameFunctions(ai_settings, stats, screen, ship, aliens, bullets, play_button)
+    game_fun = GameFunctions(ai_settings, stats, screen, ship, aliens, bullets, play_button, sb)
 
     game_fun.create_fleet()
 

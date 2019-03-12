@@ -10,13 +10,15 @@ from button import Button
 from settings import Settings
 from ship import Ship
 from game_stats import GameStats
+from scoreboard import Scoreboard
 from time import sleep
 
 
 class GameFunctions:
 
     def __init__(self, ai_settings: Settings, stats: GameStats, screen: SurfaceType,
-                 ship: Ship, aliens: Group, bullets: Group, button: Button):
+                 ship: Ship, aliens: Group, bullets: Group, button: Button,
+                 sb: Scoreboard):
         self._ai_settings = ai_settings
         self._stats = stats
         self._screen = screen
@@ -24,6 +26,7 @@ class GameFunctions:
         self._aliens = aliens
         self._bullets = bullets
         self._play_button = button
+        self._sb = sb
 
     """Private internal methods"""
 
@@ -41,6 +44,7 @@ class GameFunctions:
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
         elif event.key == pygame.K_q:
+            self._stats.save_high_score()
             sys.exit()
 
     def _check_keyup_events(self, event):
@@ -59,6 +63,11 @@ class GameFunctions:
 
             self._stats.reset_stats()
             self._stats.game_active = True
+
+            self._sb.prep_score()
+            self._sb.prep_high_score()
+            self._sb.prep_level()
+            self._sb.prep_ships()
 
             self._aliens.empty()
             self._bullets.empty()
@@ -88,10 +97,19 @@ class GameFunctions:
     def _check_bullet_alien_collisions(self):
         collisions = pygame.sprite.groupcollide(self._bullets, self._aliens, True, True)
 
+        if collisions:
+            for aliens in collisions.values():
+                self._stats.score += self._ai_settings.alien_points * len(aliens)
+                self._sb.prep_score()
+            self.check_high_score()
+
         if len(self._aliens) == 0:
             self._bullets.empty()
             self._ai_settings.increase_speed()
             self.create_fleet()
+
+            self._stats.level += 1
+            self._sb.prep_level()
 
     def _change_fleet_direction(self):
         for alien in self._aliens.sprites():
@@ -107,6 +125,9 @@ class GameFunctions:
     def _ship_hit(self):
         if self._stats.ships_left > 0:
             self._stats.ships_left -= 1
+
+            self._sb.prep_ships()
+
             self._aliens.empty()
             self._bullets.empty()
 
@@ -183,7 +204,14 @@ class GameFunctions:
         self._ship.blitme()
         self._aliens.draw(self._screen)
 
+        self._sb.show_score()
+
         if not self._stats.game_active:
             self._play_button.draw_button()
 
         pygame.display.flip()
+
+    def check_high_score(self):
+        if self._stats.score > self._stats.high_score:
+            self._stats.high_score = self._stats.score
+            self._sb.prep_high_score()
